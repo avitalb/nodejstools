@@ -340,8 +340,8 @@ namespace Microsoft.NodejsTools {
             if (window == null) {
                 window = (IReplWindow2)provider.CreateReplWindow(
                     ReplContentType,
-                    "Node.js Interactive Window",
-                    typeof(NodejsLanguageInfo).GUID,
+                    "Node.js Interactive Window Testing Salsa",
+                    Guids.TypeScriptLanguageInfo,
                     NodejsReplEvaluatorProvider.NodeReplId
                 );
             }
@@ -420,7 +420,7 @@ namespace Microsoft.NodejsTools {
         private IContentType ReplContentType {
             get {
                 if (_contentType == null) {
-                    _contentType = ComponentModel.GetService<IContentTypeRegistryService>().GetContentType(NodejsConstants.Nodejs);
+                    _contentType = ComponentModel.GetService<IContentTypeRegistryService>().GetContentType(NodejsConstants.TypeScript);
                 }
                 return _contentType;
             }
