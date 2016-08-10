@@ -56,7 +56,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Microsoft.NodejsTools</RootNamespace>
     <AssemblyName>Microsoft.NodejsTools</AssemblyName>
-    <UseVSSDK>true</UseVSSDK>
+    <UseVSSDK>false</UseVSSDK>
     <RestorePackages>true</RestorePackages>
     <SccProjectName>SAK</SccProjectName>
     <SccLocalPath>SAK</SccLocalPath>
@@ -116,6 +116,9 @@
     <Reference Include="envdte80, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <EmbedInteropTypes>False</EmbedInteropTypes>
     </Reference>
+    <Reference Include="Microsoft.VisualStudio.InteractiveWindow">
+      <HintPath>roslyn_binaries\Microsoft.VisualStudio.InteractiveWindow.dll</HintPath>
+    </Reference>
     <Reference Include="microsoft.visualstudio.textmanager.interop.11.0, Version=11.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <EmbedInteropTypes>True</EmbedInteropTypes>
     </Reference>
@@ -169,7 +172,6 @@
     <Reference Include="Microsoft.VisualStudio.Text.UI, Version=$(VSTarget).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
     <Reference Include="Microsoft.VisualStudio.Text.UI.Wpf, Version=$(VSTarget).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
     <Reference Include="Microsoft.VisualStudio.TextManager.Interop" />
-    <Reference Include="Microsoft.VisualStudio.Shell.$(VSTarget), Version=$(VSTarget).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
     <Reference Include="Microsoft.VisualStudio.Shell.Immutable.11.0" />
     <Reference Include="Microsoft.VisualStudio.Shell.Immutable.10.0" />
     <Reference Include="Microsoft.VisualStudio.TextManager.Interop.8.0, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
@@ -391,6 +393,12 @@
     <Compile Include="Debugger\Communication\TcpNetworkClient.cs" />
     <Compile Include="Debugger\ExceptionHitTreatment.cs" />
     <Compile Include="Debugger\ExceptionHandler.cs" />
+    <Compile Include="ReplNew\NodejsInteractiveEvaluator.cs" />
+    <Compile Include="ReplNew\NodejsInteractiveWindow.cs" />
+    <Compile Include="ReplNew\OutputBuffer.cs" />
+    <Compile Include="ReplNew\PromptMargin.cs" />
+    <Compile Include="ReplNew\PromptMarginVisualManager.cs" />
+    <Compile Include="ReplNew\ReplWindowProvider.cs" />
     <Compile Include="SourceMapping\FunctionInfo.cs" />
     <Compile Include="SourceMapping\JavaScriptSourceMapInfo.cs" />
     <Compile Include="Debugger\NodeConstants.cs" />
