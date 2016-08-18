@@ -1,0 +1,97 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.ComponentModel.Composition;
+using Microsoft.VisualStudio.InteractiveWindow.Shell;
+using Microsoft.VisualStudio.InteractiveWindow;
+using Microsoft.VisualStudio.Utilities;
+using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
+using Microsoft.VisualStudio.Imaging;
+
+namespace Microsoft.NodejsTools.ReplNew
+{
+    [Export(typeof(NodejsInteractiveWindowProvider))]
+    class NodejsInteractiveWindowProvider
+    {
+        private readonly IServiceProvider _serviceProvider;
+        private readonly IInteractiveEvaluator _evaluator;
+        private readonly IVsInteractiveWindowFactory _windowFactory;
+        private readonly IContentType _nodeContentType;
+
+        [ImportingConstructor]
+        public NodejsInteractiveWindowProvider(
+            [Import(typeof(SVsServiceProvider))] IServiceProvider serviceProvider,
+            [Import] IVsInteractiveWindowFactory factory,
+            [Import] IInteractiveEvaluatorProvider evaluatorProvider,
+            [Import] IContentTypeRegistryService contentTypeService
+        )
+        {
+            _serviceProvider = serviceProvider;
+            _evaluator = evaluatorProvider.GetEvaluator("{E4AC36B7-EDC5-4AD2-B758-B5416D520705}");
+            _windowFactory = factory;
+            _nodeContentType = contentTypeService.GetContentType(NodejsConstants.Nodejs);
+        }
+
+        public IVsInteractiveWindow OpenOrCreate(string replId)
+        {
+            IVsInteractiveWindow window;
+
+            //TODO(avital) if window already created, window.Show(true);
+            window = Create(replId);
+            window.Show(true);
+            return window;
+        }
+
+        private IVsInteractiveWindow CreateInteractiveWindowInternal(
+            IInteractiveEvaluator evaluator,
+            IContentType contentType,
+            bool alwaysCreate,
+            string title,
+            Guid languageServiceGuid,
+            string replId
+        )
+        {
+            var creationFlags = __VSCREATETOOLWIN.CTW_fActivateWithProject;
+            if (alwaysCreate)
+            {
+                creationFlags |= __VSCREATETOOLWIN.CTW_fForceCreate;
+            }
+
+            var replWindow = _windowFactory.Create(Guids.NodejsLanguageInfo, 0, title, evaluator, creationFlags);
+            var toolWindow = replWindow as ToolWindowPane;
+            if (toolWindow != null)
+            {
+                toolWindow.BitmapImageMoniker = KnownMonikers.PYInteractiveWindow;
+            }
+            replWindow.SetLanguage(Guids.NodejsLanguageInfo, contentType);
+            replWindow.InteractiveWindow.InitializeAsync();
+
+            return replWindow;
+        }
+        public IVsInteractiveWindow Create(string replId)
+        {
+            var window = CreateInteractiveWindowInternal(
+                _evaluator,
+                _nodeContentType,
+                true,
+                "Node.js Interactive Window",
+                Guids.NodejsLanguageInfo,
+                replId
+            );
+            return window;
+        }
+
+        //public IVsInteractiveWindow FindReplWindow(string replId)
+        //{
+        //    if (window.ReplId == replId)
+        //    {
+        //        return window;
+        //    }
+            
+        //    return null;
+        //}
+    }
+}

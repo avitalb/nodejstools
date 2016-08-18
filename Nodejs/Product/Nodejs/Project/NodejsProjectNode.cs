@@ -974,7 +974,7 @@ namespace Microsoft.NodejsTools.Project {
                 var button = taskDialog.ShowModal();
                 if (button == dedupeButton) {
                     var repl = NodejsPackage.Instance.OpenReplWindow(focus: false);
-                    await repl.ExecuteCommand(".npm dedupe").HandleAllExceptions(SR.ProductName);
+                    //await repl.ExecuteCommand(".npm dedupe").HandleAllExceptions(SR.ProductName);
 
                     taskDialog.Content += "\r\n\r\n" + SR.GetString(SR.LongPathNpmDedupeDidNotHelp);
                     taskDialog.Buttons.Remove(dedupeButton);

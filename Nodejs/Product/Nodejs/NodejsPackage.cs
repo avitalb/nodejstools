@@ -45,9 +45,12 @@ using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.TextManager.Interop;
 using Microsoft.VisualStudio.Utilities;
+using Microsoft.VisualStudio.InteractiveWindow;
+using Microsoft.VisualStudio.LanguageServices.Interactive;
 using Microsoft.VisualStudioTools;
 using Microsoft.VisualStudioTools.Project;
 using Microsoft.Win32;
+using Microsoft.VisualStudio.InteractiveWindow.Shell;
 
 namespace Microsoft.NodejsTools {
     /// <summary>
@@ -332,26 +335,13 @@ namespace Microsoft.NodejsTools {
             }
         }
 
-        internal IReplWindow2 OpenReplWindow(bool focus = true) {
+        internal IVsInteractiveWindow OpenReplWindow(bool focus = true) {
             var compModel = ComponentModel;
-            var provider = compModel.GetService<IReplWindowProvider>();
+            var replProvider = compModel?.GetService<ReplNew.NodejsInteractiveWindowProvider>();
 
-            var window = (IReplWindow2)provider.FindReplWindow(NodejsReplEvaluatorProvider.NodeReplId);
-            if (window == null) {
-                window = (IReplWindow2)provider.CreateReplWindow(
-                    ReplContentType,
-                    "Node.js Interactive Window Testing Salsa",
-                    Guids.TypeScriptLanguageInfo,
-                    NodejsReplEvaluatorProvider.NodeReplId
-                );
-            }
-
-            IVsWindowFrame windowFrame = (IVsWindowFrame)((ToolWindowPane)window).Frame;
-            ErrorHandler.ThrowOnFailure(windowFrame.Show());
-
-            if (focus) {
-                window.Focus();
-            }
+            //TODO(avital) implement FindReplWindow
+            //var window = replProvider.FindReplWindow(NodejsReplEvaluatorProvider.NodeReplId);
+            var window = replProvider.OpenOrCreate(ReplNew.NodejsInteractiveEvaluatorProvider.NodeReplId);
 
             return window;
         }
