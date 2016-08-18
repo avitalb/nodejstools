@@ -60,15 +60,15 @@ namespace Microsoft.VisualStudio.Repl {
 
         private readonly IWpfTextView _textView;
         private readonly IEditorFormatMap _editorFormatMap;
-        private readonly NodejsInteractiveWindow _promptProvider;
+        //private readonly IReplWindow _promptProvider;
         private PromptMarginVisualManager _visualManager;
 
         public PromptMargin(IWpfTextViewHost wpfTextViewHost, IEditorFormatMap editorFormatMap) {
             _textView = wpfTextViewHost.TextView;
             _editorFormatMap = editorFormatMap;
 
-            _promptProvider = NodejsInteractiveWindow.FromBuffer(_textView.TextBuffer);
-            _promptProvider.MarginVisibilityChanged += new Action(OnMarginVisibilityChanged);
+            //_promptProvider = NodejsInteractiveWindow.FromBuffer(_textView.TextBuffer);
+            //_promptProvider.MarginVisibilityChanged += new Action(OnMarginVisibilityChanged);
 
             _visualManager = new PromptMarginVisualManager(this, editorFormatMap);
             _visualManager.MarginVisual.IsVisibleChanged += this.OnIsVisibleChanged;
@@ -81,9 +81,9 @@ namespace Microsoft.VisualStudio.Repl {
             get { return _textView; }
         }
 
-        internal NodejsInteractiveWindow PromptProvider {
-            get { return _promptProvider; }
-        }
+        //internal NodejsInteractiveWindow PromptProvider {
+        //    get { return _promptProvider; }
+        //}
 
         void OnMarginVisibilityChanged() {
             _visualManager.MarginVisual.Visibility = this.Enabled ? Visibility.Visible : Visibility.Collapsed;
@@ -129,14 +129,14 @@ namespace Microsoft.VisualStudio.Repl {
         }
 
         private void RefreshGlyphsOver(ITextViewLine textViewLine) {
-            foreach (var prompt in _promptProvider.GetOverlappingPrompts(textViewLine.Extent)) {
-                SnapshotSpan span = new SnapshotSpan(prompt.Value, 0);
-                ReplSpanKind kind = prompt.Key;
+            //foreach (var prompt in _promptProvider.GetOverlappingPrompts(textViewLine.Extent)) {
+            //    SnapshotSpan span = new SnapshotSpan(prompt.Value, 0);
+            //    ReplSpanKind kind = prompt.Key;
 
-                if (textViewLine.End == prompt.Value || textViewLine.Extent.Contains(prompt.Value)) {
-                    _visualManager.AddGlyph(_promptProvider.GetPromptText(kind), span);
-                }
-            }
+            //    if (textViewLine.End == prompt.Value || textViewLine.Extent.Contains(prompt.Value)) {
+            //        _visualManager.AddGlyph(_promptProvider.GetPromptText(kind), span);
+            //    }
+            //}
         }
 
         private void ThrowIfDisposed() {
@@ -168,7 +168,8 @@ namespace Microsoft.VisualStudio.Repl {
         public bool Enabled {
             get {
                 ThrowIfDisposed();
-                return _promptProvider.DisplayPromptInMargin;
+                return true;
+                //return _promptProvider.DisplayPromptInMargin;
             }
         }
 
@@ -177,9 +178,9 @@ namespace Microsoft.VisualStudio.Repl {
         }
 
         public void Dispose() {
-            if (_promptProvider != null) {
-                _promptProvider.MarginVisibilityChanged -= this.OnMarginVisibilityChanged;
-            }
+            //if (_promptProvider != null) {
+                //_promptProvider.MarginVisibilityChanged -= this.OnMarginVisibilityChanged;
+            //}
 
             if (_visualManager != null) {
                 var visual = _visualManager.MarginVisual;

@@ -32,7 +32,7 @@ namespace Microsoft.VisualStudio.Repl {
         private int _bufferLength;
         private long _lastFlush;
         private static readonly Stopwatch _stopwatch;
-        private readonly NodejsInteractiveWindow _window;
+        private readonly IReplWindow _window;
         private const int _initialMaxSize = 1024;
         private bool _processAnsiEscapes;
         private ConsoleColor _outColor = ConsoleColor.Black, _errColor = ConsoleColor.Red;
@@ -42,7 +42,7 @@ namespace Microsoft.VisualStudio.Repl {
             _stopwatch.Start();
         }
 
-        public OutputBuffer(NodejsInteractiveWindow window) {
+        public OutputBuffer(IReplWindow window) {
             _maxSize = _initialMaxSize;
             _lock = new object();
             _timer = new DispatcherTimer();
@@ -235,14 +235,14 @@ namespace Microsoft.VisualStudio.Repl {
             OutputEntry[] entries;
             lock (_lock) {
                 entries = _outputEntries.ToArray();
-
+                
                 _outputEntries.Clear();
                 _bufferLength = 0;
                 _timer.IsEnabled = false;
             }
 
             if (entries.Length > 0) {
-                _window.AppendOutput(entries);
+                //_window.AppendOutput(entries);
                 _window.TextView.Caret.EnsureVisible();
             }
         }

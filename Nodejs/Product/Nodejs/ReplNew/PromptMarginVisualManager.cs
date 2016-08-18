@@ -102,8 +102,8 @@ namespace Microsoft.VisualStudio.Repl {
         private UIElement CreatePromptElement(string text) {
             TextBlock block = new TextBlock();
             block.Text = text;
-            block.Foreground = _margin.PromptProvider.HostControl.Foreground;
-            block.FontSize = _margin.PromptProvider.HostControl.FontSize;
+            //block.Foreground = _margin.PromptProvider.HostControl.Foreground;
+            //block.FontSize = _margin.PromptProvider.HostControl.FontSize;
             block.FontFamily = _Consolas; // TODO: get the font family from the editor?
             return block;
         }
