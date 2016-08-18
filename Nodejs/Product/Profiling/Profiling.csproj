@@ -57,6 +57,7 @@
     <RootNamespace>Microsoft.NodejsTools.Profiling</RootNamespace>
     <AssemblyName>Microsoft.NodejsTools.Profiling</AssemblyName>
     <UseVSSDK>true</UseVSSDK>
+    <VSSDKTargetPlatformRegRootSuffix>Exp</VSSDKTargetPlatformRegRootSuffix>
     <SccProjectName>SAK</SccProjectName>
     <SccLocalPath>SAK</SccLocalPath>
     <SccAuxPath>SAK</SccAuxPath>

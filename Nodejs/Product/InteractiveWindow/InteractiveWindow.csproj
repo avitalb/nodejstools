@@ -54,6 +54,7 @@
     <RootNamespace>Microsoft.NodejsTools.Repl</RootNamespace>
     <AssemblyName>Microsoft.NodejsTools.InteractiveWindow</AssemblyName>
     <UseVSSDK>true</UseVSSDK>
+    <VSSDKTargetPlatformRegRootSuffix>Exp</VSSDKTargetPlatformRegRootSuffix>
     <SccProjectName>SAK</SccProjectName>
     <SccLocalPath>SAK</SccLocalPath>
     <SccAuxPath>SAK</SccAuxPath>
