@@ -27,6 +27,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Threading;
+using Microsoft.NodejsTools.Repl;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Editor;
 using Microsoft.VisualStudio.Language.Intellisense;
@@ -64,7 +65,8 @@ namespace Microsoft.VisualStudio.Repl {
 #else
         public const string TypeGuid = "5adb6033-611f-4d39-a193-57a717115c0f";
 #endif
-
+#pragma warning disable 0649
+#pragma warning disable 0169
         private bool _adornmentToMinimize = false;
         private bool _showOutput, _useSmartUpDown;
         
@@ -180,6 +182,8 @@ namespace Microsoft.VisualStudio.Repl {
         private int _bufferLength;
         private long _lastFlush;
         private readonly List<OutputBuffer.OutputEntry> _outputEntries = new List<OutputBuffer.OutputEntry>();
+#pragma warning restore 0649
+#pragma warning restore 0169
 
         public NodejsInteractiveWindow(IComponentModel/*!*/ model, IInteractiveEvaluator/*!*/ evaluator, IContentType/*!*/ contentType, string[] roles, string/*!*/ title, Guid languageServiceGuid, string replId) {
             Contract.Assert(evaluator != null);
@@ -386,7 +390,7 @@ namespace Microsoft.VisualStudio.Repl {
         /// <summary>
         /// See IReplWindow
         /// </summary>
-        public Task<ExecutionResult> Reset() {
+        public Task<VisualStudio.InteractiveWindow.ExecutionResult> Reset() {
             if (_stdInputStart != null) {
                 UIThread(CancelStandardInput);
             }
@@ -428,13 +432,41 @@ namespace Microsoft.VisualStudio.Repl {
             return (T)o;
         }
 
+        internal string GetPromptText(ReplSpanKind kind)
+        {
+            switch (kind)
+            {
+                case ReplSpanKind.Prompt:
+                    return _prompt;
 
+                case ReplSpanKind.SecondaryPrompt:
+                    return _secondPrompt;
 
+                case ReplSpanKind.StandardInputPrompt:
+                    return _stdInputPrompt;
+
+                default:
+                    throw new InvalidOperationException();
+            }
+        }
+
+        internal Control/*!*/ HostControl
+        {
+            get { return _textViewHost.HostControl; }
+        }
+
+#pragma warning disable 0067
         /// <summary>
         /// Trigerred when prompt margin visibility should change.
         /// </summary>
         internal event Action MarginVisibilityChanged;
         public event EventHandler<SubmissionBufferAddedEventArgs> SubmissionBufferAdded;
+#pragma warning restore 0067
+
+        internal bool DisplayPromptInMargin
+        {
+            get { return _displayPromptInMargin; }
+        }
 
         #endregion
 
@@ -872,22 +904,22 @@ namespace Microsoft.VisualStudio.Repl {
             TextView.Selection.Clear();
         }
 
-        public void ShowContextMenu() {
-            var uishell = (IVsUIShell)GetService(typeof(SVsUIShell));
-            if (uishell != null) {
-                var pt = System.Windows.Forms.Cursor.Position;
-                var pnts = new[] { new POINTS { x = (short)pt.X, y = (short)pt.Y } };
-                var guid = Guids.guidReplWindowCmdSet;
-                int hr = uishell.ShowContextMenu(
-                    0,
-                    ref guid,
-                    0x2100,
-                    pnts,
-                    TextView as IOleCommandTarget);
+        //public void ShowContextMenu() {
+        //    var uishell = (IVsUIShell)WindowPane.GetService(typeof(SVsUIShell));
+        //    if (uishell != null) {
+        //        var pt = System.Windows.Forms.Cursor.Position;
+        //        var pnts = new[] { new POINTS { x = (short)pt.X, y = (short)pt.Y } };
+        //        var guid = Guids.guidReplWindowCmdSet;
+        //        int hr = uishell.ShowContextMenu(
+        //            0,
+        //            ref guid,
+        //            0x2100,
+        //            pnts,
+        //            TextView as IOleCommandTarget);
 
-                ErrorHandler.ThrowOnFailure(hr);
-            }
-        }
+        //        ErrorHandler.ThrowOnFailure(hr);
+        //    }
+        //}
 
         #endregion
 
@@ -908,8 +940,10 @@ namespace Microsoft.VisualStudio.Repl {
         }
 
         private sealed class CommandFilter : IOleCommandTarget {
+#pragma warning disable 0649
             private readonly NodejsInteractiveWindow _replWindow;
             private readonly CommandFilterLayer _layer;
+#pragma warning restore 0649
 
             public int QueryStatus(ref Guid pguidCmdGroup, uint cCmds, OLECMD[] prgCmds, IntPtr pCmdText) {
                 switch (_layer) {
@@ -947,7 +981,7 @@ namespace Microsoft.VisualStudio.Repl {
         private int PreLanguageCommandFilterQueryStatus(ref Guid pguidCmdGroup, uint cCmds, OLECMD[] prgCmds, IntPtr pCmdText) {
             var nextTarget = _languageServiceCommandFilter;
 
-            if (pguidCmdGroup == Guids.guidReplWindowCmdSet) {
+            if (pguidCmdGroup == Microsoft.NodejsTools.Repl.Guids.guidReplWindowCmdSet) {
                 switch (prgCmds[0].cmdID) {
                     case PkgCmdIDList.cmdidBreakLine:
                         prgCmds[0].cmdf = CommandEnabled;
@@ -975,9 +1009,9 @@ namespace Microsoft.VisualStudio.Repl {
                         ReturnIsLineBreak = false;
                         break;
 
-                    case VSConstants.VSStd2KCmdID.SHOWCONTEXTMENU:
-                        ShowContextMenu();
-                        return VSConstants.S_OK;
+                    //case VSConstants.VSStd2KCmdID.SHOWCONTEXTMENU:
+                    //    ShowContextMenu();
+                    //    return VSConstants.S_OK;
 
                     case VSConstants.VSStd2KCmdID.TYPECHAR:
                         _historySearch = null;
@@ -1015,6 +1049,54 @@ namespace Microsoft.VisualStudio.Repl {
         }
 
         #endregion
+
+        internal IEnumerable<KeyValuePair<ReplSpanKind, SnapshotPoint>> GetOverlappingPrompts(SnapshotSpan span)
+        {
+            if (_promptLineMapping == null || _promptLineMapping.Count == 0 || _projectionSpans.Count == 0)
+            {
+                yield break;
+            }
+
+            var currentSnapshotSpan = span.TranslateTo(CurrentSnapshot, SpanTrackingMode.EdgeInclusive);
+            var startLine = currentSnapshotSpan.Start.GetContainingLine();
+            var endLine = currentSnapshotSpan.End.GetContainingLine();
+
+            var promptMappingIndex = GetPromptMappingIndex(startLine.LineNumber);
+
+            do
+            {
+                int lineNumber = _promptLineMapping[promptMappingIndex].Key;
+                int promptIndex = _promptLineMapping[promptMappingIndex].Value;
+
+                // no overlapping prompts will be found beyond the last line of the span:
+                if (lineNumber > endLine.LineNumber)
+                {
+                    break;
+                }
+
+                // enumerate all prompts of the input block (primary and secondary):
+                do
+                {
+                    var line = CurrentSnapshot.GetLineFromLineNumber(lineNumber);
+                    ReplSpan projectionSpan = _projectionSpans[promptIndex];
+                    Debug.Assert(projectionSpan.Kind.IsPrompt());
+
+                    if (line.Start.Position >= currentSnapshotSpan.Span.Start || line.Start.Position < currentSnapshotSpan.Span.End)
+                    {
+                        yield return new KeyValuePair<ReplSpanKind, SnapshotPoint>(
+                            projectionSpan.Kind,
+                            new SnapshotPoint(CurrentSnapshot, line.Start)
+                        );
+                    }
+
+                    promptIndex += SpansPerLineOfInput;
+                    lineNumber++;
+                } while (promptIndex < _projectionSpans.Count && _projectionSpans[promptIndex].Kind == ReplSpanKind.SecondaryPrompt);
+
+                // next input block:
+                promptMappingIndex++;
+            } while (promptMappingIndex < _promptLineMapping.Count);
+        }
 
         #region Post-language service IOleCommandTarget
 
@@ -1633,19 +1715,19 @@ namespace Microsoft.VisualStudio.Repl {
 
                     _sw = Stopwatch.StartNew();
 
-                    Task<ExecutionResult> task = ExecuteCommand(text, updateHistory: true) ?? Evaluator.ExecuteCodeAsync(text) ?? ExecutionResult.Failed;
+                    Task<VisualStudio.InteractiveWindow.ExecutionResult> task = Evaluator.ExecuteCodeAsync(text) ?? VisualStudio.InteractiveWindow.ExecutionResult.Failed;
                     
                     task.ContinueWith(FinishExecute, _uiScheduler);
                 }
             });
         }
 
-        private void FinishExecute(Task<ExecutionResult> result) {
+        private void FinishExecute(Task<VisualStudio.InteractiveWindow.ExecutionResult> result) {
             Debug.Assert(CheckAccess());
 
             _sw.Stop();
             _buffer.Flush();
-            
+
             if (_history.Last != null) {
                 _history.Last.Duration = _sw.Elapsed.Seconds;
             }
@@ -1665,46 +1747,47 @@ namespace Microsoft.VisualStudio.Repl {
             PrepareForInput();
         }
 
-        private Task<ExecutionResult> ExecuteCommand(string text, bool updateHistory) {
-            if (!text.StartsWith(_commandPrefix)) {
-                return null;
-            }
+        //TODO(avitalb) implement roslyn commands
+        //private Task<ExecutionResult> ExecuteCommand(string text, bool updateHistory) {
+        //    if (!text.StartsWith(_commandPrefix)) {
+        //        return null;
+        //    }
 
-            string commandLine = text.Substring(_commandPrefix.Length).Trim();
-            string command = commandLine.Split(' ')[0];
-            string args = commandLine.Substring(command.Length).Trim();
+        //    string commandLine = text.Substring(_commandPrefix.Length).Trim();
+        //    string command = commandLine.Split(' ')[0];
+        //    string args = commandLine.Substring(command.Length).Trim();
 
-            // TODO: no special casing, these should all be commands
+        //    // TODO: no special casing, these should all be commands
 
-            if (command == _commandPrefix) {
-                // REPL-level comment; do nothing
-                return ExecutionResult.Succeeded;
-            }
+        //    if (command == _commandPrefix) {
+        //        // REPL-level comment; do nothing
+        //        return ExecutionResult.Succeeded;
+        //    }
 
-            if (commandLine.Length == 0 || command == "help") {
-                ShowReplHelp();
-                return ExecutionResult.Succeeded;
-            }
+        //    if (commandLine.Length == 0 || command == "help") {
+        //        ShowReplHelp();
+        //        return ExecutionResult.Succeeded;
+        //    }
 
-            IReplCommand commandHandler = _commands.Find(x => x.Command == command);
-            if (commandHandler == null) {
-                commandHandler = _commands.OfType<IReplCommand2>().FirstOrDefault(x => x.Aliases.Contains(command));
-                if (commandHandler == null) {
-                    return null;
-                }
-            }
+        //    IReplCommand commandHandler = _commands.Find(x => x.Command == command);
+        //    if (commandHandler == null) {
+        //        commandHandler = _commands.OfType<IReplCommand2>().FirstOrDefault(x => x.Aliases.Contains(command));
+        //        if (commandHandler == null) {
+        //            return null;
+        //        }
+        //    }
 
-            if (updateHistory) {
-                _history.Last.Command = true;
-            }
+        //    if (updateHistory) {
+        //        _history.Last.Command = true;
+        //    }
 
-            try {
-                return commandHandler.Execute(this, args) ?? ExecutionResult.Failed;
-            } catch (Exception e) {
-                WriteError(String.Format("Command '{0}' failed: {1}", command, e.Message));
-                return ExecutionResult.Failed;
-            }
-        }
+        //    try {
+        //        return commandHandler.Execute(this, args) ?? ExecutionResult.Failed;
+        //    } catch (Exception e) {
+        //        WriteError(String.Format("Command '{0}' failed: {1}", command, e.Message));
+        //        return ExecutionResult.Failed;
+        //    }
+        //}
 
         private void ShowReplHelp() {
             var cmdnames = new List<IReplCommand>(_commands.Where(x => x.Command != null));
@@ -1859,7 +1942,7 @@ namespace Microsoft.VisualStudio.Repl {
         /// </summary>
         private void AddLanguageBuffer() {
             var buffer = _bufferFactory.CreateTextBuffer(_languageContentType);
-            buffer.Properties.AddProperty(typeof(IReplEvaluator), _evaluator);
+            buffer.Properties.AddProperty(typeof(IInteractiveEvaluator), _evaluator);
 
             // get the real classifier, and have our classifier start listening and forwarding events            
             var contentClassifier = _classifierAgg.GetClassifier(buffer);
@@ -1868,7 +1951,7 @@ namespace Microsoft.VisualStudio.Repl {
             var previousBuffer = _currentLanguageBuffer;
             _currentLanguageBuffer = buffer;
 
-            _evaluator.ActiveLanguageBufferChanged(buffer, previousBuffer);
+            //_evaluator.ActiveLanguageBufferChanged(buffer, previousBuffer);
 
             // add the whole buffer to the projection buffer and set it up to expand to the right as text is appended
             ReplSpan promptSpan = CreatePrimaryPrompt();
@@ -2021,6 +2104,145 @@ namespace Microsoft.VisualStudio.Repl {
 
         #endregion
 
+        /// <summary>
+        /// Appends text to the output buffer and updates projection buffer to include it.
+        /// </summary>
+        internal void AppendOutput(OutputBuffer.OutputEntry[] entries)
+        {
+            if (!entries.Any())
+            {
+                return;
+            }
+
+            int oldBufferLength = _outputBuffer.CurrentSnapshot.Length;
+            int oldLineCount = _outputBuffer.CurrentSnapshot.LineCount;
+
+            RemoveProtection(_outputBuffer, _outputProtection);
+
+            var spans = new List<KeyValuePair<Span, OutputBuffer.OutputEntryProperties>>(entries.Length);
+
+            // append the text to output buffer and make sure it ends with a line break:
+            using (var edit = _outputBuffer.CreateEdit())
+            {
+                if (_addedLineBreakOnLastOutput)
+                {
+                    // appending additional output, remove the line break we previously injected
+                    var lineBreak = GetLineBreak();
+                    var deleteSpan = new Span(_outputBuffer.CurrentSnapshot.Length - lineBreak.Length, lineBreak.Length);
+                    Debug.Assert(_outputBuffer.CurrentSnapshot.GetText(deleteSpan) == lineBreak);
+                    edit.Delete(deleteSpan);
+                    oldBufferLength -= lineBreak.Length;
+                    _addedLineBreakOnLastOutput = false;
+                }
+
+                var text = String.Empty;
+                var startPosition = oldBufferLength;
+                foreach (var entry in entries)
+                {
+                    text = entry.Buffer.ToString();
+                    edit.Insert(oldBufferLength, text);
+
+                    var span = new Span(startPosition, text.Length);
+                    spans.Add(new KeyValuePair<Span, OutputBuffer.OutputEntryProperties>(span, entry.Properties));
+                    startPosition += text.Length;
+                }
+                if (!_readingStdIn && !EndsWithLineBreak(text))
+                {
+                    var lineBreak = GetLineBreak();
+                    edit.Insert(oldBufferLength, lineBreak);
+                    _addedLineBreakOnLastOutput = true;
+                    // Adust last span to include line break
+                    var last = spans.Last();
+                    var newLastSpan = new Span(last.Key.Start, last.Key.Length + lineBreak.Length);
+                    spans[spans.Count() - 1] = new KeyValuePair<Span, OutputBuffer.OutputEntryProperties>(newLastSpan, last.Value);
+                }
+                edit.Apply();
+            }
+
+            ApplyProtection(_outputBuffer, _outputProtection);
+
+            int newLineCount = _outputBuffer.CurrentSnapshot.LineCount;
+            int insertBeforePrompt = -1;
+            if (!_isRunning)
+            {
+                int lastPrimaryPrompt, lastPrompt;
+
+                IndexOfLastPrompt(out lastPrimaryPrompt, out lastPrompt);
+
+                // If the last prompt is STDIN prompt insert output before it, otherwise before the primary prompt:
+                insertBeforePrompt = (lastPrompt != -1 && _projectionSpans[lastPrompt].Kind == ReplSpanKind.StandardInputPrompt) ? lastPrompt : lastPrimaryPrompt;
+            }
+
+            foreach (var entry in spans)
+            {
+                var span = entry.Key;
+                var props = entry.Value;
+
+                var trackingSpan = new CustomTrackingSpan(
+                    _outputBuffer.CurrentSnapshot,
+                    span,
+                    PointTrackingMode.Negative,
+                    PointTrackingMode.Negative);
+
+                var outputSpan = new ReplSpan(trackingSpan, ReplSpanKind.Output);
+                _outputColors.Add(new ColoredSpan(span, props.Color));
+
+                // insert output span immediately before the last primary span
+                if (insertBeforePrompt >= 0)
+                {
+                    if (oldLineCount != newLineCount)
+                    {
+                        int delta = newLineCount - oldLineCount;
+                        Debug.Assert(delta > 0);
+
+                        // update line -> projection span index mapping for the last primary prompt
+                        var lastMaplet = _promptLineMapping.Last();
+                        _promptLineMapping[_promptLineMapping.Count - 1] = new KeyValuePair<int, int>(
+                            lastMaplet.Key + delta,
+                            lastMaplet.Value + 1);
+                    }
+
+                    // Projection buffer change might trigger events that access prompt line mapping, so do it last:
+                    InsertProjectionSpan(insertBeforePrompt, outputSpan);
+                }
+                else
+                {
+                    AppendProjectionSpan(outputSpan);
+                }
+            }
+        }
+
+        private static bool EndsWithLineBreak(string str)
+        {
+            return str.Length > 0 && (str[str.Length - 1] == '\n' || str[str.Length - 1] == '\r');
+        }
+
+        private void IndexOfLastPrompt(out int lastPrimary, out int last)
+        {
+            last = -1;
+            lastPrimary = -1;
+            for (int i = _projectionSpans.Count - 1; i >= 0; i--)
+            {
+                switch (_projectionSpans[i].Kind)
+                {
+                    case ReplSpanKind.Prompt:
+                        lastPrimary = i;
+                        if (last == -1)
+                        {
+                            last = i;
+                        }
+                        return;
+
+                    case ReplSpanKind.SecondaryPrompt:
+                    case ReplSpanKind.StandardInputPrompt:
+                        if (last == -1)
+                        {
+                            last = i;
+                        }
+                        break;
+                }
+            }
+        }
         #region Editor Helpers
 
         private ITextSnapshotLine GetLastLine() {
@@ -2189,6 +2411,12 @@ namespace Microsoft.VisualStudio.Repl {
             RemoveProjectionSpans(_projectionSpans.Count - SpansPerLineOfInput, SpansPerLineOfInput);
         }
 
+        private void RemoveProjectionSpans(int index, int count)
+        {
+            _projectionSpans.RemoveRange(index, count);
+            _projectionBuffer.DeleteSpans(index, count);
+        }
+   
         private void UIThread(Action action) {
             if (!CheckAccess()) {
                 try {
@@ -2248,9 +2476,9 @@ namespace Microsoft.VisualStudio.Repl {
 
         Span IInteractiveWindow.WriteLine(string text)
         {
-            int result = _buffer.Write(text);
+            /*int result =*/_buffer.Write(text);
             _buffer.Write(text + GetLineBreak());
-            return new Span(result, (text != null ? text.Length : 0) + _lineBreakString.Length);
+            return new Span();// result, (text != null ? text.Length : 0) + _lineBreakString.Length);
         }
 
         public Span Write(string text, bool error = false)
@@ -2273,7 +2501,7 @@ namespace Microsoft.VisualStudio.Repl {
             UIThread(() => {
                 Write(text, error: true);
             });
-            //need to add a line break
+            //TODO(avitalb) need to add a line break
             return new Span();
         }
 
@@ -2282,7 +2510,7 @@ namespace Microsoft.VisualStudio.Repl {
             UIThread(() => {
                 Write(text, error: true);
             });
-            return new Span((text != 0 ? text.Length : 0));
+            return new Span();//text != null ? text.Length : 0
         }
 
         public void Write(UIElement element)
@@ -2292,39 +2520,39 @@ namespace Microsoft.VisualStudio.Repl {
                 // buffer the text
                 if (element != null)
                 {
-                    _buffer.Write(element.ToString(), error);
+                    _buffer.Write(element.ToString());
                 }
             }
         }
 
         public void FlushOutput()
         {
-            // if we're rapidly outputting grow the output buffer.
-            long curTime = _sw.ElapsedMilliseconds;
-            if (curTime - _lastFlush < 1000)
-            {
-                if (_maxSize < 1024 * 1024)
-                {
-                    _maxSize *= 2;
-                }
-            }
-            _lastFlush = _sw.ElapsedMilliseconds;
+        //    // if we're rapidly outputting grow the output buffer.
+        //    long curTime = _sw.ElapsedMilliseconds;
+        //    if (curTime - _lastFlush < 1000)
+        //    {
+        //        if (_maxSize < 1024 * 1024)
+        //        {
+        //            _maxSize *= 2;
+        //        }
+        //    }
+        //    _lastFlush = _sw.ElapsedMilliseconds;
 
-            OutputBuffer.OutputEntry[] entries;
-            lock (_lock)
-            {
-                entries = _outputEntries.ToArray();
+        //    OutputBuffer.OutputEntry[] entries;
+        //    lock (_lock)
+        //    {
+        //        entries = _outputEntries.ToArray();
 
-                _outputEntries.Clear();
-                _bufferLength = 0;
-                _timer.IsEnabled = false;
-            }
+        //        _outputEntries.Clear();
+        //        _bufferLength = 0;
+        //        _timer.IsEnabled = false;
+        //    }
 
-            if (entries.Length > 0)
-            {
-                _window.AppendOutput(entries);
-                _window.TextView.Caret.EnsureVisible();
-            }
+        //    if (entries.Length > 0)
+        //    {
+        //        _window.AppendOutput(entries);
+        //        _window.TextView.Caret.EnsureVisible();
+        //    }
         }
 
         TextReader IInteractiveWindow.ReadStandardInput()

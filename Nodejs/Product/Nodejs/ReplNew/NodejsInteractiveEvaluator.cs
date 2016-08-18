@@ -25,7 +25,9 @@ namespace Microsoft.NodejsTools.ReplNew
 
         private IInteractiveWindow _window;
         private ListenerThread _listener;
+#pragma warning disable 0649
         private readonly INodejsReplSite _site;
+#pragma warning disable 0649
         internal static readonly object InputBeforeReset = new object();    // used to mark buffers which are no longer valid because we've done a reset
         public IInteractiveWindow CurrentWindow
         {
@@ -42,13 +44,12 @@ namespace Microsoft.NodejsTools.ReplNew
                 }
 
                 _window = value;
-
+                
             }
         }
 
         public NodejsInteractiveEvaluator()
         {
-            //constructor
         }
         public void AbortExecution()
         {
@@ -98,7 +99,8 @@ namespace Microsoft.NodejsTools.ReplNew
 
         public Task<VisualStudio.InteractiveWindow.ExecutionResult> InitializeAsync()
         {
-            throw new NotImplementedException(); 
+            return VisualStudio.InteractiveWindow.ExecutionResult.Succeeded;
+            //throw new NotImplementedException(); 
         }
 
         public Task<VisualStudio.InteractiveWindow.ExecutionResult> ResetAsync(bool initialize = true)
