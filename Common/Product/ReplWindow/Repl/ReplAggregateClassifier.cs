@@ -23,7 +23,7 @@ namespace Microsoft.NodejsTools.Repl {
 #else
 namespace Microsoft.VisualStudio.Repl {
 #endif
-    class ReplAggregateClassifier : IClassifier {
+    public class ReplAggregateClassifier : IClassifier {
         private readonly List<ElisionInfo> _elisionBuffers = new List<ElisionInfo>();                    // the ellison buffers we've created, 1 for each language span
         private readonly ITextBuffer _primaryBuffer;
         private readonly IBufferGraphFactoryService _bufGraphFact;

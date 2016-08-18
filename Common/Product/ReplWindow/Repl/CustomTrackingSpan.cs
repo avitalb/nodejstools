@@ -25,7 +25,7 @@ namespace Microsoft.VisualStudio.Repl {
     /// and these are initially zero length.  When we insert at the beginning of these we'll end up keeping the
     /// span zero length if we're just EdgePostivie tracking.
     /// </summary>
-    class CustomTrackingSpan : ITrackingSpan {
+    public class CustomTrackingSpan : ITrackingSpan {
         private readonly ITrackingPoint _start, _end;
         private readonly ITextBuffer _buffer;
 

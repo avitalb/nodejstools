@@ -27,7 +27,7 @@ namespace Microsoft.VisualStudio.Repl {
     [Export(typeof(IViewTaggerProvider))]
     [TagType(typeof(IntraTextAdornmentTag))]
     [ContentType(ReplConstants.ReplContentTypeName)]
-    internal class InlineReplAdornmentProvider : IViewTaggerProvider {
+    public class InlineReplAdornmentProvider : IViewTaggerProvider {
         public ITagger<T> CreateTagger<T>(ITextView textView, ITextBuffer buffer) where T : ITag {
             if (buffer == null || textView == null || typeof(T) != typeof(IntraTextAdornmentTag)) {
                 return null;

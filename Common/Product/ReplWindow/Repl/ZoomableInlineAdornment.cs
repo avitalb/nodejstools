@@ -25,7 +25,7 @@ namespace Microsoft.NodejsTools.Repl {
 #else
 namespace Microsoft.VisualStudio.Repl {
 #endif
-    internal class ZoomableInlineAdornment : ContentControl {
+    public class ZoomableInlineAdornment : ContentControl {
         private readonly ITextView _parent;
         private ResizingAdorner _adorner;
         private bool _isResizing;

@@ -20,7 +20,7 @@ namespace Microsoft.NodejsTools.Repl {
 #else
 namespace Microsoft.VisualStudio.Repl {
 #endif
-    internal sealed class ColoredSpan {
+    public sealed class ColoredSpan {
         public readonly Span Span;
         public readonly ConsoleColor Color;
 

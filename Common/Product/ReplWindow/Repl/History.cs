@@ -21,14 +21,14 @@ namespace Microsoft.NodejsTools.Repl {
 #else
 namespace Microsoft.VisualStudio.Repl {
 #endif
-    internal class History {
+    public class History {
         private readonly int _maxLength;
         private int _pos;
         private bool _live;
         private readonly List<HistoryEntry> _history;
         private string _uncommitedInput;
 
-        internal History()
+        public History()
             : this(50) {
         }
 
@@ -38,7 +38,7 @@ namespace Microsoft.VisualStudio.Repl {
             _history = new List<HistoryEntry>();
         }
 
-        internal void Clear() {
+        public void Clear() {
             _pos = -1;
             _live = false;
             _history.Clear();
@@ -52,7 +52,7 @@ namespace Microsoft.VisualStudio.Repl {
             get { return _history.Count; }
         }
 
-        internal string UncommittedInput {
+        public string UncommittedInput {
             get { return _uncommitedInput; }
             set { _uncommitedInput = value; }
         }
@@ -61,7 +61,7 @@ namespace Microsoft.VisualStudio.Repl {
             get { return _history; }
         }
 
-        internal HistoryEntry Last {
+        public HistoryEntry Last {
             get {
                 if (_history.Count > 0) {
                     return _history[_history.Count - 1];
@@ -71,7 +71,7 @@ namespace Microsoft.VisualStudio.Repl {
             }
         }
 
-        internal void Add(string text) {
+        public void Add(string text) {
             var entry = new HistoryEntry { Text = text };
             _live = false;
             if (Length == 0 || Last.Text != text) {
@@ -162,19 +162,19 @@ namespace Microsoft.VisualStudio.Repl {
             return next;
         }
 
-        internal string GetNext(string search = null) {
+        public string GetNext(string search = null) {
             return Get(MoveToNext, search);
         }
 
-        internal string GetPrevious(string search = null) {
+        public string GetPrevious(string search = null) {
             return Get(MoveToPrevious, search);
         }
 
-        internal class HistoryEntry {
+        public class HistoryEntry {
             internal string Text;
-            internal bool Command;
-            internal int Duration;
-            internal bool Failed;
+            public bool Command;
+            public int Duration;
+            public bool Failed;
         }
     }
 }

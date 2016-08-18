@@ -21,7 +21,7 @@ namespace Microsoft.NodejsTools.Repl {
 #else
 namespace Microsoft.VisualStudio.Repl {
 #endif
-    static class Guids {
+    public static class Guids {
 #if NTVS_FEATURE_INTERACTIVEWINDOW
         public const string guidReplWindowPkgString = "29102E6C-34F2-4FF1-BA2F-C02ADE3846E8";
         public const string guidReplWindowCmdSetString = "220C57E5-228F-46B5-AF80-D0AB55A44902";        

@@ -22,7 +22,7 @@ namespace Microsoft.NodejsTools.Repl {
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "4.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    internal class Resources {
+    public class Resources {
         
         private static global::System.Resources.ResourceManager resourceMan;
         
@@ -63,7 +63,7 @@ namespace Microsoft.NodejsTools.Repl {
         /// <summary>
         ///   Looks up a localized string similar to Cannot create Interactive window.
         /// </summary>
-        internal static string CanNotCreateWindow {
+        public static string CanNotCreateWindow {
             get {
                 return ResourceManager.GetString("CanNotCreateWindow", resourceCulture);
             }

@@ -21,7 +21,7 @@ namespace Microsoft.NodejsTools.Repl {
 #else
 namespace Microsoft.VisualStudio.Repl {
 #endif
-    internal sealed class ReplSpan {
+    public sealed class ReplSpan {
         private readonly object _span; // ITrackingSpan or string
         public readonly ReplSpanKind Kind;
 
@@ -59,7 +59,7 @@ namespace Microsoft.VisualStudio.Repl {
         }
     }
 
-    internal enum ReplSpanKind {
+    public enum ReplSpanKind {
         None,
         /// <summary>
         /// The span represents output from the program (standard output)
@@ -87,8 +87,8 @@ namespace Microsoft.VisualStudio.Repl {
         StandardInput,
     }
 
-    internal static class ReplSpanKindExtensions {
-        internal static bool IsPrompt(this ReplSpanKind kind) {
+    public static class ReplSpanKindExtensions {
+        public static bool IsPrompt(this ReplSpanKind kind) {
             switch (kind) {
                 case ReplSpanKind.Prompt:
                 case ReplSpanKind.SecondaryPrompt:
