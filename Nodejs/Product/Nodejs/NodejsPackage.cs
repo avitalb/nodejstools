@@ -660,7 +660,7 @@ namespace Microsoft.NodejsTools {
             // we do not throw to Salsa from the REPL window. However, in order to provide a workable editing
             // experience within the REPL context, we initialize the loose analyzer with Quick IntelliSense
             // during ES6 mode.
-            var analysisLevel = IntellisenseOptionsPage.AnalysisLevel == AnalysisLevel.Preview ? AnalysisLevel.NodeLsMedium : IntellisenseOptionsPage.AnalysisLevel;
+            var analysisLevel = IntellisenseOptionsPage.AnalysisLevel == AnalysisLevel.Preview ? AnalysisLevel.NodeLsMedium : IntellisenseOptionsPage.AnalysisLevel; //AnalysisLevel.NodeLsHigh;
             return new VsProjectAnalyzer(analysisLevel, false);
         }
 

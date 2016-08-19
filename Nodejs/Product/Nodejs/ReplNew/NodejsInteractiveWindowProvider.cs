@@ -20,6 +20,7 @@ namespace Microsoft.NodejsTools.ReplNew
         private readonly IInteractiveEvaluator _evaluator;
         private readonly IVsInteractiveWindowFactory _windowFactory;
         private readonly IContentType _nodeContentType;
+        private IVsInteractiveWindow _replWindow;
 
         [ImportingConstructor]
         public NodejsInteractiveWindowProvider(
@@ -37,12 +38,12 @@ namespace Microsoft.NodejsTools.ReplNew
 
         public IVsInteractiveWindow OpenOrCreate(string replId)
         {
-            IVsInteractiveWindow window;
-
-            //TODO(avital) if window already created, window.Show(true);
-            window = Create(replId);
-            window.Show(true);
-            return window;
+            if (_replWindow == null)
+            {
+                _replWindow = Create(replId);
+            }
+            _replWindow.Show(true);
+            return _replWindow;
         }
 
         private IVsInteractiveWindow CreateInteractiveWindowInternal(
@@ -60,16 +61,16 @@ namespace Microsoft.NodejsTools.ReplNew
                 creationFlags |= __VSCREATETOOLWIN.CTW_fForceCreate;
             }
 
-            var replWindow = _windowFactory.Create(Guids.NodejsLanguageInfo, 0, title, evaluator, creationFlags);
-            var toolWindow = replWindow as ToolWindowPane;
+            var window = _windowFactory.Create(Guids.NodejsLanguageInfo, 0, title, evaluator, creationFlags);
+            var toolWindow = _replWindow as ToolWindowPane;
             if (toolWindow != null)
             {
                 toolWindow.BitmapImageMoniker = KnownMonikers.PYInteractiveWindow;
             }
-            replWindow.SetLanguage(Guids.NodejsLanguageInfo, contentType);
-            replWindow.InteractiveWindow.InitializeAsync();
+            window.SetLanguage(Guids.NodejsLanguageInfo, contentType);
+            window.InteractiveWindow.InitializeAsync();
 
-            return replWindow;
+            return window;
         }
         public IVsInteractiveWindow Create(string replId)
         {
@@ -83,15 +84,5 @@ namespace Microsoft.NodejsTools.ReplNew
             );
             return window;
         }
-
-        //public IVsInteractiveWindow FindReplWindow(string replId)
-        //{
-        //    if (window.ReplId == replId)
-        //    {
-        //        return window;
-        //    }
-            
-        //    return null;
-        //}
     }
 }

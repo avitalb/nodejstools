@@ -29,6 +29,7 @@ namespace Microsoft.NodejsTools.ReplNew
         private readonly INodejsReplSite _site;
 #pragma warning disable 0649
         internal static readonly object InputBeforeReset = new object();    // used to mark buffers which are no longer valid because we've done a reset
+
         public IInteractiveWindow CurrentWindow
         {
             get
@@ -47,10 +48,16 @@ namespace Microsoft.NodejsTools.ReplNew
                 
             }
         }
-
         public NodejsInteractiveEvaluator()
+            : this(VsNodejsReplSite.Site)
         {
         }
+
+        public NodejsInteractiveEvaluator(INodejsReplSite site)
+        {
+            _site = site;
+        }
+
         public void AbortExecution()
         {
             throw new NotImplementedException();
@@ -99,9 +106,62 @@ namespace Microsoft.NodejsTools.ReplNew
 
         public Task<VisualStudio.InteractiveWindow.ExecutionResult> InitializeAsync()
         {
+            var message = "Welcome to the Node.js Interactive Window";
+            WriteOutput(message, addNewLine: true);
+            _window.TextView.Options.SetOptionValue(InteractiveWindowOptions.SmartUpDown, true);
             return VisualStudio.InteractiveWindow.ExecutionResult.Succeeded;
-            //throw new NotImplementedException(); 
         }
+
+        //from ptvs
+        internal void WriteOutput(string text, bool addNewLine = true)
+        {
+            var wnd = CurrentWindow;
+            AppendText(wnd, text, addNewLine, isError: false);
+        }
+
+        private static void AppendText(
+            IInteractiveWindow window,
+            string text,
+            bool addNewLine,
+            bool isError
+        )
+        {
+            int start = 0; //, escape = text.IndexOf("\x1b[");
+            //var colors = window.OutputBuffer.Properties.GetOrCreateSingletonProperty(
+            //   // ReplOutputClassifier.ColorKey,
+            //    () => new List<ColoredSpan>()
+            //);
+            //ConsoleColor? color = null;
+
+            Span span;
+            var write = isError ? (Func<string, Span>)window.WriteError : window.Write;
+
+            //while (escape >= 0)
+            //{
+            //    span = write(text.Substring(start, escape - start));
+            //    //if (span.Length > 0)
+            //    //{
+            //    //    colors.Add(new ColoredSpan(span, color));
+            //    //}
+
+            //    start = escape + 2;
+            //    //color = GetColorFromEscape(text, ref start);
+            //    escape = text.IndexOf("\x1b[", start);
+            //}
+
+            var rest = text.Substring(start);
+            if (addNewLine)
+            {
+                rest += Environment.NewLine;
+            }
+
+            span = write(rest);
+            //if (span.Length > 0)
+            //{
+            //    colors.Add(new ColoredSpan(span, color));
+            //}
+        }
+
 
         public Task<VisualStudio.InteractiveWindow.ExecutionResult> ResetAsync(bool initialize = true)
         {

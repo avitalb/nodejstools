@@ -12,6 +12,7 @@
  *
  * ***************************************************************************/
 
+using Microsoft.VisualStudio.InteractiveWindow;
 using Microsoft.VisualStudio.Text;
 
 #if NTVS_FEATURE_INTERACTIVEWINDOW
@@ -20,9 +21,9 @@ namespace Microsoft.NodejsTools.Repl {
 namespace Microsoft.VisualStudio.Repl {
 #endif
     public static class ReplWindowExtensions {
-        public static IReplEvaluator GetReplEvaluator(this ITextBuffer textBuffer) {
-            IReplEvaluator res;
-            if (textBuffer.Properties.TryGetProperty<IReplEvaluator>(typeof(IReplEvaluator), out res)) {
+        public static IInteractiveEvaluator GetReplEvaluator(this ITextBuffer textBuffer) {
+            IInteractiveEvaluator res;
+            if (textBuffer.Properties.TryGetProperty<IInteractiveEvaluator>(typeof(IInteractiveEvaluator), out res)) {
                 return res;
             }
             return null;

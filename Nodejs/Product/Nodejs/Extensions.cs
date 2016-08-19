@@ -37,6 +37,7 @@ using Microsoft.VisualStudio.Text.Classification;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudioTools;
 using Microsoft.VisualStudioTools.Project;
+using Microsoft.VisualStudio.InteractiveWindow;
 
 namespace Microsoft.NodejsTools {
     public static class Extensions {
@@ -140,7 +141,7 @@ namespace Microsoft.NodejsTools {
 
         internal static EnvDTE.Project GetProject(this ITextBuffer buffer) {
             var path = buffer.GetFilePath();
-            if (path != null && NodejsPackage.Instance != null) {
+            if (path != null && path != "Temp.txt" && NodejsPackage.Instance != null) {
                 foreach (EnvDTE.Project proj in NodejsPackage.Instance.DTE.Solution.Projects) {
                     var nodeProj = proj.GetNodeProject();
                     if (nodeProj != null) {
@@ -175,7 +176,7 @@ namespace Microsoft.NodejsTools {
         /// Checks to see if this is a REPL buffer starting with a extensible command such as .cls, .load, etc...
         /// </summary>
         internal static bool IsReplBufferWithCommand(this ITextSnapshot snapshot) {
-            return snapshot.TextBuffer.Properties.ContainsProperty(typeof(IReplEvaluator)) &&
+            return snapshot.TextBuffer.Properties.ContainsProperty(typeof(IInteractiveEvaluator)) &&
                    snapshot.Length != 0 &&
                    snapshot[0] == '.';
         }
