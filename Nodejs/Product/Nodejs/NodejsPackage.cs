@@ -338,9 +338,6 @@ namespace Microsoft.NodejsTools {
         internal IVsInteractiveWindow OpenReplWindow(bool focus = true) {
             var compModel = ComponentModel;
             var replProvider = compModel?.GetService<ReplNew.NodejsInteractiveWindowProvider>();
-
-            //TODO(avital) implement FindReplWindow
-            //var window = replProvider.FindReplWindow(NodejsReplEvaluatorProvider.NodeReplId);
             var window = replProvider.OpenOrCreate(ReplNew.NodejsInteractiveEvaluatorProvider.NodeReplId);
 
             return window;

@@ -92,12 +92,14 @@ namespace Microsoft.NodejsTools.ReplNew
         public string FormatClipboard()
         {
             return Clipboard.GetText();
-            //behavior should replicate that of FormatClipboard() in old REPL Evaluator
         }
 
         public string GetPrompt()
         {
-            return ">";
+            var buffer = CurrentWindow.CurrentLanguageBuffer;
+            return buffer != null && buffer.CurrentSnapshot.LineCount > 1
+                ? ". "
+                : "> ";
         }
 
         public void ActiveLanguageBufferChanged(ITextBuffer currentBuffer, ITextBuffer previousBuffer)
