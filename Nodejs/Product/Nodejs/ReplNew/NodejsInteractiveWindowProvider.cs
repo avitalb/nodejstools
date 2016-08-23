@@ -34,7 +34,6 @@ namespace Microsoft.NodejsTools.ReplNew
             _serviceProvider = serviceProvider;
             _evaluator = evaluatorProvider.GetEvaluator("{E4AC36B7-EDC5-4AD2-B758-B5416D520705}");
             _windowFactory = factory;
-            //_nodeContentType = contentTypeService.GetContentType(NodejsConstants.Nodejs);
             _typescriptContentType = contentTypeService.GetContentType(NodejsConstants.JavaScript);
         }
 
@@ -63,14 +62,13 @@ namespace Microsoft.NodejsTools.ReplNew
                 creationFlags |= __VSCREATETOOLWIN.CTW_fForceCreate;
             }
 
-            //var window = _windowFactory.Create(Guids.NodejsLanguageInfo, 0, title, evaluator, creationFlags);
             var window = _windowFactory.Create(Guids.TypeScriptLanguageInfo, 0, title, evaluator, creationFlags);
             var toolWindow = _replWindow as ToolWindowPane;
             if (toolWindow != null)
             {
                 toolWindow.BitmapImageMoniker = KnownMonikers.PYInteractiveWindow;
             }
-            //replace with Node.u
+
             window.SetLanguage(Guids.TypeScriptLanguageInfo, contentType);
             window.InteractiveWindow.InitializeAsync();
 
