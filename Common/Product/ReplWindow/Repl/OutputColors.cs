@@ -23,10 +23,17 @@ namespace Microsoft.VisualStudio.Repl {
     public sealed class ColoredSpan {
         public readonly Span Span;
         public readonly ConsoleColor Color;
+        private ConsoleColor? color;
 
         public ColoredSpan(Span span, ConsoleColor color) {
             Span = span;
             Color = color;
+        }
+
+        public ColoredSpan(Span span, ConsoleColor? color)
+        {
+            Span = span;
+            this.color = color;
         }
     }
 }

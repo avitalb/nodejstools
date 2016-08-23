@@ -416,9 +416,6 @@
     <Compile Include="ReplNew\IInteractivelEvaluatorProvider.cs" />
     <Compile Include="ReplNew\NodejsInteractiveEvaluatorProvider.cs" />
     <Compile Include="ReplNew\NodejsInteractiveEvaluator.cs" />
-    <Compile Include="ReplNew\OutputBuffer.cs" />
-    <Compile Include="ReplNew\PromptMargin.cs" />
-    <Compile Include="ReplNew\PromptMarginVisualManager.cs" />
     <Compile Include="SourceMapping\FunctionInfo.cs" />
     <Compile Include="SourceMapping\JavaScriptSourceMapInfo.cs" />
     <Compile Include="Debugger\NodeConstants.cs" />

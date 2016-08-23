@@ -28,7 +28,7 @@ namespace Microsoft.VisualStudio.Repl {
     /// Provides the classifier for our repl error output buffer.
     /// </summary>
     [Export(typeof(IClassifierProvider)), ContentType(ReplConstants.ReplOutputContentTypeName)]
-    class ReplOutputClassifierProvider : IClassifierProvider {
+    public class ReplOutputClassifierProvider : IClassifierProvider {
         internal readonly Dictionary<ConsoleColor, IClassificationType> _classTypes = new Dictionary<ConsoleColor, IClassificationType>();
 
         [ImportingConstructor]

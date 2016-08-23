@@ -25,9 +25,9 @@ namespace Microsoft.VisualStudio.Repl {
     /// <summary>
     /// Classifies regions for REPL error output spans.  These are always classified as errors.
     /// </summary>
-    class ReplOutputClassifier : IClassifier {
+    public class ReplOutputClassifier : IClassifier {
         private readonly ReplOutputClassifierProvider _provider;
-        internal static object ColorKey = new object();
+        public static object ColorKey = new object();
         private readonly ITextBuffer _buffer;
 
         public ReplOutputClassifier(ReplOutputClassifierProvider provider, ITextBuffer buffer) {

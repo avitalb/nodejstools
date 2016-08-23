@@ -25,9 +25,7 @@ namespace Microsoft.NodejsTools.ReplNew
 
         private IInteractiveWindow _window;
         private ListenerThread _listener;
-#pragma warning disable 0649
         private readonly INodejsReplSite _site;
-#pragma warning disable 0649
         internal static readonly object InputBeforeReset = new object();    // used to mark buffers which are no longer valid because we've done a reset
 
         public IInteractiveWindow CurrentWindow
@@ -114,11 +112,10 @@ namespace Microsoft.NodejsTools.ReplNew
             return VisualStudio.InteractiveWindow.ExecutionResult.Succeeded;
         }
 
-        //from ptvs
         internal void WriteOutput(string text, bool addNewLine = true)
         {
-            var wnd = CurrentWindow;
-            AppendText(wnd, text, addNewLine, isError: false);
+            var window = CurrentWindow;
+            AppendText(window, text, addNewLine, isError: false);
         }
 
         private static void AppendText(
@@ -128,28 +125,28 @@ namespace Microsoft.NodejsTools.ReplNew
             bool isError
         )
         {
-            int start = 0; //, escape = text.IndexOf("\x1b[");
-            //var colors = window.OutputBuffer.Properties.GetOrCreateSingletonProperty(
-            //   // ReplOutputClassifier.ColorKey,
-            //    () => new List<ColoredSpan>()
-            //);
-            //ConsoleColor? color = null;
+            int start = 0, escape = text.IndexOf("\x1b[");
+            var colors = window.OutputBuffer.Properties.GetOrCreateSingletonProperty(
+                ReplOutputClassifier.ColorKey,
+                () => new List<ColoredSpan>()
+            );
+            ConsoleColor? color = null;
 
             Span span;
             var write = isError ? (Func<string, Span>)window.WriteError : window.Write;
 
-            //while (escape >= 0)
-            //{
-            //    span = write(text.Substring(start, escape - start));
-            //    //if (span.Length > 0)
-            //    //{
-            //    //    colors.Add(new ColoredSpan(span, color));
-            //    //}
+            while (escape >= 0)
+            {
+                span = write(text.Substring(start, escape - start));
+                if (span.Length > 0)
+                {
+                    colors.Add(new ColoredSpan(span, color));
+                }
 
-            //    start = escape + 2;
-            //    //color = GetColorFromEscape(text, ref start);
-            //    escape = text.IndexOf("\x1b[", start);
-            //}
+                start = escape + 2;
+                color = GetColorFromEscape(text, ref start);
+                escape = text.IndexOf("\x1b[", start);
+            }
 
             var rest = text.Substring(start);
             if (addNewLine)
@@ -158,12 +155,140 @@ namespace Microsoft.NodejsTools.ReplNew
             }
 
             span = write(rest);
-            //if (span.Length > 0)
-            //{
-            //    colors.Add(new ColoredSpan(span, color));
-            //}
+            if (span.Length > 0)
+            {
+                colors.Add(new ColoredSpan(span, color));
+            }
         }
 
+        private static ConsoleColor? GetColorFromEscape(string text, ref int start)
+        {
+            // http://en.wikipedia.org/wiki/ANSI_escape_code
+            // process any ansi color sequences...
+            ConsoleColor? color = null;
+            List<int> codes = new List<int>();
+            int? value = 0;
+
+            while (start < text.Length)
+            {
+                if (text[start] >= '0' && text[start] <= '9')
+                {
+                    // continue parsing the integer...
+                    if (value == null)
+                    {
+                        value = 0;
+                    }
+                    value = 10 * value.Value + (text[start] - '0');
+                }
+                else if (text[start] == ';')
+                {
+                    if (value != null)
+                    {
+                        codes.Add(value.Value);
+                        value = null;
+                    }
+                    else
+                    {
+                        // CSI ; - invalid or CSI ### ;;, both invalid
+                        break;
+                    }
+                }
+                else if (text[start] == 'm')
+                {
+                    start += 1;
+                    if (value != null)
+                    {
+                        codes.Add(value.Value);
+                    }
+
+                    // parsed a valid code
+                    if (codes.Count == 0)
+                    {
+                        // reset
+                        color = null;
+                    }
+                    else
+                    {
+                        for (int j = 0; j < codes.Count; j++)
+                        {
+                            switch (codes[j])
+                            {
+                                case 0: color = ConsoleColor.White; break;
+                                case 1: // bright/bold
+                                    color |= ConsoleColor.DarkGray;
+                                    break;
+                                case 2: // faint
+
+                                case 3: // italic
+                                case 4: // single underline
+                                    break;
+                                case 5: // blink slow
+                                case 6: // blink fast
+                                    break;
+                                case 7: // negative
+                                case 8: // conceal
+                                case 9: // crossed out
+                                case 10: // primary font
+                                case 11: // 11-19, n-th alternate font
+                                    break;
+                                case 21: // bright/bold off 
+                                    color &= ~ConsoleColor.DarkGray;
+                                    break;
+                                case 22: // normal intensity
+                                case 24: // underline off
+                                    break;
+                                case 25: // blink off
+                                    break;
+                                case 27: // image - postive
+                                case 28: // reveal
+                                case 29: // not crossed out
+                                case 30: color = Change(color, ConsoleColor.Black); break;
+                                case 31: color = Change(color, ConsoleColor.DarkRed); break;
+                                case 32: color = Change(color, ConsoleColor.DarkGreen); break;
+                                case 33: color = Change(color, ConsoleColor.DarkYellow); break;
+                                case 34: color = Change(color, ConsoleColor.DarkBlue); break;
+                                case 35: color = Change(color, ConsoleColor.DarkMagenta); break;
+                                case 36: color = Change(color, ConsoleColor.DarkCyan); break;
+                                case 37: color = Change(color, ConsoleColor.Gray); break;
+                                case 38: // xterm 286 background color
+                                case 39: // default text color
+                                    color = null;
+                                    break;
+                                case 40: // background colors
+                                case 41:
+                                case 42:
+                                case 43:
+                                case 44:
+                                case 45:
+                                case 46:
+                                case 47: break;
+                                case 90: color = ConsoleColor.DarkGray; break;
+                                case 91: color = ConsoleColor.Red; break;
+                                case 92: color = ConsoleColor.Green; break;
+                                case 93: color = ConsoleColor.Yellow; break;
+                                case 94: color = ConsoleColor.Blue; break;
+                                case 95: color = ConsoleColor.Magenta; break;
+                                case 96: color = ConsoleColor.Cyan; break;
+                                case 97: color = ConsoleColor.White; break;
+                            }
+                        }
+                    }
+                    break;
+                }
+                else
+                {
+                    // unknown char, invalid escape
+                    break;
+                }
+                start += 1;
+            }
+            return color;
+        }
+
+        private static ConsoleColor Change(ConsoleColor? from, ConsoleColor to)
+        {
+            return ((from ?? ConsoleColor.Black) & ConsoleColor.DarkGray) | to;
+        }
 
         public Task<VisualStudio.InteractiveWindow.ExecutionResult> ResetAsync(bool initialize = true)
         {
@@ -322,7 +447,7 @@ namespace Microsoft.NodejsTools.ReplNew
             {
                 if (args.Data != null)
                 {
-                    _eval._window.WriteLine(args.Data + Environment.NewLine);
+                    _eval.WriteOutput(args.Data, true);
                 }
             }
 
@@ -454,7 +579,7 @@ namespace Microsoft.NodejsTools.ReplNew
                             object result;
                             if (cmd.TryGetValue("result", out result))
                             {
-                                _eval._window.WriteLine(result.ToString());
+                                _eval.WriteOutput(result.ToString());
                                 _completion.SetResult(VisualStudio.InteractiveWindow.ExecutionResult.Success);
                             }
                             else if (cmd.TryGetValue("error", out result))
